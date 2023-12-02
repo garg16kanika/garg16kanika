@@ -18,10 +18,6 @@ Map? dataResponse;
 List? listResponse;
 List? newList;
 
-List<String> eventNameList = <String>[];
-List<String> tempList = <String>[];
-bool isLoading = false;
-
 class _SearchScreenState extends State<SearchScreen> {
   Future searchApiCall() async {
     http.Response response;
@@ -38,50 +34,9 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  _filterEventName(String text) {
-    if (text.isEmpty) {
-      setState(() {
-        eventNameList = tempList;
-      });
-    } else {
-      final List<String> filteredEvents = <String>[];
-      tempList.map((event) {
-        if (event.contains(text.toString().toUpperCase())) {
-          filteredEvents.add(event);
-        }
-      }).toList();
-      setState(() {
-        eventNameList = filteredEvents;
-      });
-    }
-  }
-
-  _fetchEvent() async {
-    setState(() {
-      isLoading = true;
-    });
-    tempList = <String>[];
-    ;
-    final response = await http.get(Uri.parse(
-        "https://sde-007.api.assignment.theinternetfolks.works/v1/event"));
-    if (response.statusCode == 200) {
-      final jsonResponse = jsonDecode(response.body);
-      jsonResponse['message'].forEach((event, subevent) {
-        tempList.add(event.toString().toUpperCase());
-      });
-    } else {
-      throw Exception("Failed to load Dogs Breeds.");
-    }
-    setState(() {
-      eventNameList = tempList;
-      isLoading = false;
-    });
-  }
-
   @override
   void initState() {
     searchApiCall();
-    _fetchEvent();
     // TODO: implement initState
     super.initState();
   }
@@ -95,77 +50,56 @@ class _SearchScreenState extends State<SearchScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Padding(
-          //   padding: EdgeInsets.symmetric(horizontal: 18),
-          //   child: TextField(
-          //     onChanged: (value) {
-          //       if (value.isNotEmpty) {
-          //         newList = listResponse!.data
-          //             .where((element) => element
-          //                 .toString()
-          //                 .toLowerCase()
-          //                 .contains(value.toLowerCase()))
-          //             .toList();
-          //       }
-          //     },
-          //     decoration: InputDecoration(
-          //       hintText: 'Search',
-          //       prefixIcon: Icon(Icons.search),
-          //       border: OutlineInputBorder(
-          //         borderRadius: BorderRadius.circular(15),
-          //       ),
-          //     ),
-          //   ),
-          // ),
           Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Container(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Container(
-                      padding: EdgeInsets.only(bottom: 16.0),
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: "Search Dog Breeds Here...",
-                          prefixIcon: Icon(Icons.search),
-                        ),
-                        onChanged: (text) {
-                          _filterEventName(text);
-                        },
-                      ),
-                    ),
-                    Expanded(
-                      flex: 1,
-                      child: Center(
-                        child: isLoading
-                            ? CircularProgressIndicator()
-                            : ListView.builder(
-                                itemCount: eventNameList.length,
-                                itemBuilder: (context, index) {
-                                  return ListTile(
-                                      title: Text(
-                                    eventNameList[index],
-                                  ));
-                                }),
-                      ),
-                    )
-                  ],
+            padding: EdgeInsets.symmetric(horizontal: 18),
+            child: TextField(
+              onChanged: (value) {
+                if (value.isNotEmpty) {
+                  setState(() {
+                    newList = listResponse!
+                        .where((element) => element
+                            .toString()
+                            .toLowerCase()
+                            .contains(value.toLowerCase()))
+                        .toList();
+                  });
+                }
+              },
+              decoration: InputDecoration(
+                hintText: 'Search',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
                 ),
-              )),
+              ),
+            ),
+          ),
           Expanded(
             child: ListView.builder(
-                itemCount: listResponse!.length,
+                itemCount:
+                    newList == null ? listResponse!.length : newList!.length,
                 itemBuilder: ((context, index) {
-                  return HomeContainer(
-                    day: listResponse![index]['date_time'],
-                    description: listResponse![index]['description'],
-                    organiserName: listResponse![index]['organiser_name'],
-                    date: listResponse![index]['date_time'],
-                    title: listResponse![index]['title'],
-                    imageLink: listResponse![index]['banner_image'],
-                    address: listResponse![index]['venue_name'],
-                  );
+                  return newList == null
+                      ? HomeContainer(
+                          day: listResponse![index]['date_time'],
+                          description: listResponse![index]['description'],
+                          organiserName: listResponse![index]['organiser_name'],
+                          date: listResponse![index]['date_time'],
+                          title: listResponse![index]['title'],
+                          imageLink: listResponse![index]['banner_image'],
+                          address: listResponse![index]['venue_name'],
+                        )
+                      : Expanded(
+                          child: HomeContainer(
+                            day: newList![index]['date_time'],
+                            description: newList![index]['description'],
+                            organiserName: newList![index]['organiser_name'],
+                            date: newList![index]['date_time'],
+                            title: newList![index]['title'],
+                            imageLink: newList![index]['banner_image'],
+                            address: newList![index]['venue_name'],
+                          ),
+                        );
                 })),
           )
         ],
